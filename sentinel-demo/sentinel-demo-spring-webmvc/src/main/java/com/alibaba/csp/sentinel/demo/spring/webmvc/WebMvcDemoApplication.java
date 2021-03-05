@@ -30,5 +30,6 @@ public class WebMvcDemoApplication {
     public static void main(String[] args) {
         //设置configuration
         SpringApplication.run(WebMvcDemoApplication.class);
+        //设置configuratio
     }
 }
