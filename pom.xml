@@ -79,6 +79,7 @@
 
         <module>sentinel-demo</module>
         <module>sentinel-benchmark</module>
+        <module>spring-cloud-starter-alibaba-sentinel-demo</module>
 
     </modules>
 

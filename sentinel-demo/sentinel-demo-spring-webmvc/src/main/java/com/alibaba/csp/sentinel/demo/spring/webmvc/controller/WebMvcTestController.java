@@ -17,6 +17,9 @@ package com.alibaba.csp.sentinel.demo.spring.webmvc.controller;
 
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
+
+import com.alibaba.csp.sentinel.annotation.SentinelResource;
+import com.alibaba.csp.sentinel.slots.block.BlockException;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -30,11 +33,15 @@ import org.springframework.web.servlet.ModelAndView;
 @Controller
 public class WebMvcTestController {
 
+    @SentinelResource(value = "hello",blockHandler = "apiHelloBlockHandler")
     @GetMapping("/hello")
     @ResponseBody
     public String apiHello() {
         doBusiness();
         return "Hello!";
+    }
+    public String apiHelloBlockHandler( BlockException ex) {
+        return " apiHello apiHelloBlockHandler, ";
     }
 
     @GetMapping("/err")

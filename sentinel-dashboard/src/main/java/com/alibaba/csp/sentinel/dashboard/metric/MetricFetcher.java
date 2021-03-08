@@ -322,6 +322,7 @@ public class MetricFetcher {
         }
 
         for (String line : lines) {
+            logger.info(line);
             try {
                 MetricNode node = MetricNode.fromThinString(line);
                 if (shouldFilterOut(node.getResource())) {

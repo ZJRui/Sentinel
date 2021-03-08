@@ -35,6 +35,7 @@ import java.lang.reflect.Method;
 @Aspect
 public class SentinelResourceAspect extends AbstractSentinelAspectSupport {
 
+    //这种SentinelResourceAspect就限定了只能够使用SentinelResourceAspect注解
     @Pointcut("@annotation(com.alibaba.csp.sentinel.annotation.SentinelResource)")
     public void sentinelResourceAnnotationPointcut() {
     }

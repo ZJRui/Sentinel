@@ -43,17 +43,16 @@ public class ApolloDataSourceDemo {
 
     public static void main(String[] args) {
         loadRules();
-        // Assume we config: resource is `TestResource`, initial QPS threshold is 5.
+
         FlowQpsRunner runner = new FlowQpsRunner(KEY, 1, 100);
         runner.simulateTraffic();
         runner.tick();
     }
 
     private static void loadRules() {
-        // Set up basic information, only for demo purpose. You may adjust them based on your actual environment.
-        // For more information, please refer https://github.com/ctripcorp/apollo
+
         String appId = "sentinel-demo";
-        String apolloMetaServerAddress = "http://localhost:8080";
+        String apolloMetaServerAddress = "http://172.102.16.30:8080";
         System.setProperty("app.id", appId);
         System.setProperty("apollo.meta", apolloMetaServerAddress);
 
