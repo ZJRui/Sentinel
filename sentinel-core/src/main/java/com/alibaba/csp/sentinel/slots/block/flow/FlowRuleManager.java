@@ -52,7 +52,12 @@ public class FlowRuleManager {
 
     private static final AtomicReference<Map<String, List<FlowRule>>> flowRules = new AtomicReference<Map<String, List<FlowRule>>>();
 
+    ////监听器
     private static final FlowPropertyListener LISTENER = new FlowPropertyListener();
+    ////用来监听配置是否发生变，SentinelProperty是一个泛型接口， 这里创建一个 指定泛型为List<FLowRule>的SentinelProperty
+    //我们可以将SentinelProperty看做一个单纯的属性， 只不过这个时机的属性时SentinelProperty中的   private T value = null;泛型T value
+    //对于FlowRuleManager 本事值管理规则，而规则本身封装在SentinelProperty中
+    //SentinelProperty中可以添加监听器Listener，
     private static SentinelProperty<List<FlowRule>> currentProperty = new DynamicSentinelProperty<List<FlowRule>>();
 
     @SuppressWarnings("PMD.ThreadPoolCreationRule")
@@ -61,7 +66,15 @@ public class FlowRuleManager {
 
     static {
         flowRules.set(Collections.<String, List<FlowRule>>emptyMap());
-        currentProperty.addListener(LISTENER);
+        //这里直接调用了 添加监听器
+        //添加监听器的时候 让这个监听器去加载值。
+        //比如FlowRuleManager类中存在一个Listener属性，和SentinelProperty属性，
+        //调用SentinelProperty传入listener， 然后调用listener的configLoad
+        //而Listener 和FlowManager绑定着，SentinelProperty存在这属性，交给了Listener
+        //本质就是交给了FlowManager，因为在 FlowPropertyListener的configLoad中我们看到
+        //  FlowManager.flowRules.set(rules);也就是说直接使用SentinelProperty中存在的值替换掉了FlowManager中
+        //flowRules中的值
+        currentProperty.addListener(LISTENER);//添加一个监听器
         startMetricTimerListener();
     }
     
@@ -163,6 +176,14 @@ public class FlowRuleManager {
         @Override
         public void configLoad(List<FlowRule> conf) {
             Map<String, List<FlowRule>> rules = FlowRuleUtil.buildFlowRuleMap(conf);
+            //添加监听器的时候 让这个监听器去加载值。
+            //比如FlowRuleManager类中存在一个Listener属性，和SentinelProperty属性，
+            //调用SentinelProperty传入listener， 然后调用listener的configLoad
+            //而Listener 和FlowManager绑定着，SentinelProperty存在这属性，交给了Listener
+            //本质就是交给了FlowManager，因为在 FlowPropertyListener的configLoad中我们看到
+            //  FlowManager.flowRules.set(rules);也就是说直接使用SentinelProperty中存在的值替换掉了FlowManager中
+            //flowRules中的值
+            //注意这里 传入rules，flowRules是一个原子引用AtomicReference ，直接替换原来的引用
             flowRules.set(rules);
             RecordLog.info("[FlowRuleManager] Flow rules loaded: {}", rules);
         }

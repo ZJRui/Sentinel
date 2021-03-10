@@ -36,6 +36,10 @@ public abstract class AbstractDataSource<S, T> implements ReadableDataSource<S, 
             throw new IllegalArgumentException("parser can't be null");
         }
         this.parser = parser;
+        //这里首先为DataSource创建一个SentinelProperty
+        //然后在DataSource创建的时候调用   initialize();方法，在init方法中从Apollo中获取数据loadAndUpdateRules
+        //加载得到数据之后 就调用SentinelProperty的updateValue方法 将rule更新给Listener
+        //然后Listener中更新到FlowManager中
         this.property = new DynamicSentinelProperty<T>();
     }
 

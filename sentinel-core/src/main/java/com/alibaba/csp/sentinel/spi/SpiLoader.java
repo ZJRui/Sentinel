@@ -315,7 +315,7 @@ public final class SpiLoader<S> {
             return;
         }
 
-        String fullFileName = SPI_FILE_PREFIX + service.getName();
+        String fullFileName = SPI_FILE_PREFIX + service.getName();// "META-INF/services/";
         ClassLoader classLoader;
         if (SentinelConfig.shouldUseContextClassloader()) {
             classLoader = Thread.currentThread().getContextClassLoader();

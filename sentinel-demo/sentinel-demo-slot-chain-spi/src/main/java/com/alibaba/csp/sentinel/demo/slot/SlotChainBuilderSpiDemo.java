@@ -24,6 +24,7 @@ import com.alibaba.csp.sentinel.slots.block.BlockException;
  */
 public class SlotChainBuilderSpiDemo {
 
+    //默认的chain会调用sentinel的类加载工具SpiLoader的loadPrototypeInstanceListSorted(ProcessorSlot.class);
     public static void main(String[] args) {
         // You will see this in record.log, indicating that the custom slot chain builder is activated:
         // [SlotChainProvider] Global slot chain builder resolved: com.alibaba.csp.sentinel.demo.slot.DemoSlotChainBuilder

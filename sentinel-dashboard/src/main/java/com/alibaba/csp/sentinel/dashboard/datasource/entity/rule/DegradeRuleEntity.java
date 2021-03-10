@@ -32,6 +32,9 @@ public class DegradeRuleEntity implements RuleEntity {
 
     private String resource;
     private String limitApp;
+    //count表示阈值：当熔断策略为 慢调用比例的时候 对应的字段是 最大RT
+    //当策略为比例的时候就是比例阈值
+    //当策略为异常数量的时候就对应 异常数
     private Double count;
     private Integer timeWindow;
     private Integer grade;
