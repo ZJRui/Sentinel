@@ -49,7 +49,7 @@ public class CtSph implements Sph {
      * {@link ProcessorSlotChain}, no matter in which {@link Context}.
      */
     private static volatile Map<ResourceWrapper, ProcessorSlotChain> chainMap
-        = new HashMap<ResourceWrapper, ProcessorSlotChain>();
+            = new HashMap<ResourceWrapper, ProcessorSlotChain>();//注意使用了volatile 修饰。缓存资源--》调用链之间的关系
 
     private static final Object LOCK = new Object();
 
@@ -110,14 +110,15 @@ public class CtSph implements Sph {
     }
 
     private AsyncEntry asyncEntryInternal(ResourceWrapper resourceWrapper, int count, Object... args)
-        throws BlockException {
+            throws BlockException {
         return asyncEntryWithPriorityInternal(resourceWrapper, count, false, args);
     }
 
     private Entry entryWithPriority(ResourceWrapper resourceWrapper, int count, boolean prioritized, Object... args)
-        throws BlockException {
+            throws BlockException {
         //前文ContextUtil.enter的时候会创建context
         Context context = ContextUtil.getContext();
+        // 上下文名称对应的入口节点是否已经超过阈值2000，超过则会返回空 CtEntry
         if (context instanceof NullContext) {
             // The {@link NullContext} indicates that the amount of context has exceeded the threshold,
             // so here init the entry only. No rule checking will be done.
@@ -125,7 +126,7 @@ public class CtSph implements Sph {
         }
 
         if (context == null) {
-            // Using default context.
+            // Using default context.  // 如果没有指定上下文名称，则使用默认名称，也就是默认入口节点
             context = InternalContextUtil.internalEnter(Constants.CONTEXT_DEFAULT_NAME);
         }
 
@@ -133,9 +134,12 @@ public class CtSph implements Sph {
         if (!Constants.ON) {
             return new CtEntry(resourceWrapper, null, context);
         }
-
+        // 生成插槽链
         ProcessorSlot<Object> chain = lookProcessChain(resourceWrapper);
 
+        /*
+         * 表示资源(插槽链)超过6000，因此不会进行规则检查。
+         */
         /*
          * Means amount of resources (slot chain) exceeds {@link Constants.MAX_SLOT_CHAIN_SIZE},
          * so no rule checking will be done.
@@ -144,8 +148,14 @@ public class CtSph implements Sph {
             return new CtEntry(resourceWrapper, null, context);
         }
 
+        //将slot链条放置到了Entry中，同时 ；链条对象是DefaultProcessorSlotChain
         Entry e = new CtEntry(resourceWrapper, chain, context);
         try {
+            //调用链条对象的entry方法，也就是DefaultProcessorSlotChain的entry方法，在DefaultProcessorSlotChain中存储了
+            //第一个元素  first.transformEntry,然后在链条中的每一个Slot都存储了下一个 slot的引用，也就是AbstractLinkedProcessorSlot<?> next = 下一个slot
+            //调用链中的每一个元素都是ProcessorSlot元素，但是 调用链对象DefaultProcessorSlotChain是一个调用链对象
+            //ProcessorSlot元素都存在entry 、exit方法作为进入和退出，但是调用链对象为什么也可以调用entry方法呢？
+            //原因是 DefaultProcessorSlotChain 也间接实现了ProcessorSlot接口
             chain.entry(context, resourceWrapper, null, count, prioritized, args);
         } catch (BlockException e1) {
             e.exit(count, args);
@@ -179,7 +189,7 @@ public class CtSph implements Sph {
 
     /**
      * Get {@link ProcessorSlotChain} of the resource. new {@link ProcessorSlotChain} will
-     * be created if the resource doesn't relate one.
+     * be created if the resource doesn't relate one.如果资源不相关。
      *
      * <p>Same resource({@link ResourceWrapper#equals(Object)}) will share the same
      * {@link ProcessorSlotChain} globally, no matter in which {@link Context}.<p/>
@@ -193,19 +203,28 @@ public class CtSph implements Sph {
      * @return {@link ProcessorSlotChain} of the resource
      */
     ProcessorSlot<Object> lookProcessChain(ResourceWrapper resourceWrapper) {
+        //注意这里是单利模式的典型实现，缓存中没有则创建一个放入到缓存中，需要加锁 然后双重验证，同时需要将map声明为 volatile
         ProcessorSlotChain chain = chainMap.get(resourceWrapper);
         if (chain == null) {
             synchronized (LOCK) {
+                //根据资源获取到这个资源的chain
                 chain = chainMap.get(resourceWrapper);
                 if (chain == null) {
                     // Entry size limit.
                     if (chainMap.size() >= Constants.MAX_SLOT_CHAIN_SIZE) {
                         return null;
                     }
-
+                    //如果资源的调用链对象为空，则 创建一个调用链对象，并放置到缓存中
+                    //这里要强调一点，对于相同的 resource，使用同一个责任链实例，不同的 resource，使用不同的责任链实例。
+                    //每一个调用链 链条中存在的ProcessorSlot都是一样的，他们都是从meta-inf/service/processorslot中通过SPI加载得到的
+                    //但是为什么 还要区分每一个资源对应一个调用链对象呢？
+                    //而且 一个资源同时被多个 线程访问，也就是说调用链对象同时被多个线程使用。调用链对象应该是线程安全的
+                    //为什么 一个资源 需要对应一个调用链？ 因为一个调用链中存在一个数据 分析的节点 StatisticsSlot
+                    //这个Slot 通过原子操作 只记录该资源的新消息，多个线程访问同一个资源，使用同一个调用链，则会同时被采集到StatisticsSlot中
+                    //从而实现数据的实时统计。 否则需要在多线程之间共享 实时数据进行记录
                     chain = SlotChainProvider.newSlotChain();
                     Map<ResourceWrapper, ProcessorSlotChain> newMap = new HashMap<ResourceWrapper, ProcessorSlotChain>(
-                        chainMap.size() + 1);
+                            chainMap.size() + 1);
                     newMap.putAll(chainMap);
                     newMap.put(resourceWrapper, chain);
                     chainMap = newMap;
@@ -312,6 +331,7 @@ public class CtSph implements Sph {
 
     @Override
     public Entry entry(String name, EntryType type, int count, Object... args) throws BlockException {
+        //生成资源对象
         StringResourceWrapper resource = new StringResourceWrapper(name, type);
         return entry(resource, count, args);
     }
@@ -330,14 +350,14 @@ public class CtSph implements Sph {
 
     @Override
     public Entry entryWithPriority(String name, EntryType type, int count, boolean prioritized, Object... args)
-        throws BlockException {
+            throws BlockException {
         StringResourceWrapper resource = new StringResourceWrapper(name, type);
         return entryWithPriority(resource, count, prioritized, args);
     }
 
     @Override
     public Entry entryWithType(String name, int resourceType, EntryType entryType, int count, Object[] args)
-        throws BlockException {
+            throws BlockException {
         return entryWithType(name, resourceType, entryType, count, false, args);
     }
 

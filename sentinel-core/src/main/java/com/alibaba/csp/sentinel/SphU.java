@@ -76,12 +76,15 @@ public class SphU {
 
     /**
      * Record statistics and perform rule checking for the given resource.
-     *
+     *在 Sentinel 里面，所有的资源都对应一个资源名称（resourceName），每次资源调用都会创建一个 Entry 对象。Entry 可以通过对主流框架的适配自动创建，
+     * 也可以通过注解的方式或调用 SphU API 显式创建。Entry 创建的时候，同时也会创建一系列功能插槽（slot chain），这些插槽有不同的职责
      * @param name the unique name of the protected resource
      * @return the {@link Entry} of this invocation (used for mark the invocation complete and get context data)
      * @throws BlockException if the block criteria is met (e.g. metric exceeded the threshold of any rules)
      */
     public static Entry entry(String name) throws BlockException {
+        //默认为出口类型流量
+        //注意这里使用到了Env中的 sph静态变量，同时Env中存在静态代码块
         return Env.sph.entry(name, EntryType.OUT, 1, OBJECTS0);
     }
 

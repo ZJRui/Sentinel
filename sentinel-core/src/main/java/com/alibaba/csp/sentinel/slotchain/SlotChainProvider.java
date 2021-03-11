@@ -27,9 +27,13 @@ import com.alibaba.csp.sentinel.spi.SpiLoader;
  */
 public final class SlotChainProvider {
 
+    //注意这里声明为了volatile类型
     private static volatile SlotChainBuilder slotChainBuilder = null;
 
     /**
+     * 加载和选择过程不是线程安全的，但这没关系，因为该方法应该只被调用
+     * *通过{@code lookProcessChain}在{@link com.alibaba.csp.sentinel。CtSph}下锁。
+     * *
      * The load and pick process is not thread-safe, but it's okay since the method should be only invoked
      * via {@code lookProcessChain} in {@link com.alibaba.csp.sentinel.CtSph} under lock.
      *
@@ -40,7 +44,8 @@ public final class SlotChainProvider {
             return slotChainBuilder.build();
         }
 
-        // Resolve the slot chain builder SPI.
+        // Resolve the slot chain builder SPI. 这个地方使用SpiLoad去读取 meat-inf、service 目录下SlotChainBuilder接口对应的文件中的实现
+        //在配置文件中指定了SlotChainBuilder接口的唯一实现类 com.alibaba.csp.sentinel.slots.DefaultSlotChainBuilder
         slotChainBuilder = SpiLoader.of(SlotChainBuilder.class).loadFirstInstanceOrDefault();
 
         if (slotChainBuilder == null) {
@@ -49,10 +54,12 @@ public final class SlotChainProvider {
             slotChainBuilder = new DefaultSlotChainBuilder();
         } else {
             RecordLog.info("[SlotChainProvider] Global slot chain builder resolved: {}",
-                slotChainBuilder.getClass().getCanonicalName());
+                    slotChainBuilder.getClass().getCanonicalName());
         }
-        return slotChainBuilder.build();
+        return slotChainBuilder.build();//执行DefaultSlotChainBuilder的build方法
+        //DefaultSlotChainBuilder的build方法中会 创建DefaultProcessorSlotChain对象，同时使用 SpiLoader.of(ProcessorSlot.class).loadInstanceListSorted(); 加载配置文件中配置的ProcessorSlot的默认实现类
     }
 
-    private SlotChainProvider() {}
+    private SlotChainProvider() {
+    }
 }

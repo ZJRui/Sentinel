@@ -43,6 +43,11 @@ public final class InitExecutor {
             return;
         }
         try {
+            //这里使用 SPI 加载 InitFunc 的实现，大家可以在这里断个点，可以发现这里加载了 CommandCenterInitFunc 类和 HeartbeatSenderInitFunc 类。
+            //在core源码中是com.alibaba.csp.sentinel.metric.extension.MetricCallbackInit
+            //在transport-common包中存在两个
+            // com.alibaba.csp.sentinel.transport.init.CommandCenterInitFunc
+            //com.alibaba.csp.sentinel.transport.init.HeartbeatSenderInitFunc
             List<InitFunc> initFuncs = SpiLoader.of(InitFunc.class).loadInstanceListSorted();
             List<OrderWrapper> initList = new ArrayList<OrderWrapper>();
             for (InitFunc initFunc : initFuncs) {

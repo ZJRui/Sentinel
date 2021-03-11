@@ -81,6 +81,10 @@ public class ContextUtil {
     }
 
     /**
+     * // 创建一个名称为entrance1，来源为appA 的上下文Context
+     * ContextUtil.enter("entrance1", "appA");
+     * 第一个参数是 context name，它代表调用链的入口，作用是为了区分不同的调用链路，个人感觉没什么用，默认是 Constants.CONTEXT_DEFAULT_NAME 的常量值 "sentinel_default_context"；
+     * 第二个参数代表调用方标识 origin，目前它有两个作用，一是用于黑白名单的授权控制，二是可以用来统计诸如从应用 application-a 发起的对当前应用 interfaceXxx() 接口的调用，目前这个数据会被统计，但是 dashboard 中并不展示。
      * <p>
      * Enter the invocation context, which marks as the entrance of an invocation chain.
      * The context is wrapped with {@code ThreadLocal}, meaning that each thread has it's own {@link Context}.
@@ -102,6 +106,10 @@ public class ContextUtil {
      * <p>
      * Same resource in different context will count separately, see {@link NodeSelectorSlot}.
      * </p>
+     * 第二个参数标识资源的类型，我们左边的代码使用了 EntryType.IN 代表这个是入口流量，比如我们的接口对外提供服务，
+     * 那么我们通常就是控制入口流量；EntryType.OUT 代表出口流量，比如上面的 getOrderInfo 方法（没写默认就是 OUT），它的业务需要调用订单服务，
+     * 像这种情况，压力其实都在订单服务中，那么我们就指定它为出口流量。这个流量类型有什么用呢？答案在 SystemSlot 类中，它用于实现自适应限流，
+     * 根据系统健康状态来判断是否要限流，如果是 OUT 类型，由于压力在外部系统中，所以就不需要执行这个规则。
      *
      * @param name   the context name
      * @param origin the origin of this invocation, usually the origin could be the Service
@@ -123,6 +131,7 @@ public class ContextUtil {
             Map<String, DefaultNode> localCacheNameMap = contextNameNodeMap;
             DefaultNode node = localCacheNameMap.get(name);
             if (node == null) {
+                //// 判断缓存中入口节点数量是否大于2000
                 if (localCacheNameMap.size() > Constants.MAX_CONTEXT_NAME_SIZE) {
                     setNullContext();
                     return NULL_CONTEXT;
@@ -135,8 +144,9 @@ public class ContextUtil {
                                 setNullContext();
                                 return NULL_CONTEXT;
                             } else {
+                                //双重加锁创建一个入口节点
                                 node = new EntranceNode(new StringResourceWrapper(name, EntryType.IN), null);
-                                // Add entrance node.
+                                // Add entrance node. 放置到全局根节点
                                 Constants.ROOT.addChild(node);
 
                                 Map<String, DefaultNode> newMap = new HashMap<>(contextNameNodeMap.size() + 1);
@@ -146,10 +156,13 @@ public class ContextUtil {
                             }
                         }
                     } finally {
+                        //注意上文中加锁只是为了创建入口Node节点， 一个入口节点中保存着资源的名称， contextNameNodeMap意味着node节点和context在一起
+                        //上文只是创建了Node节点，在下面的代码中会创建context
                         LOCK.unlock();
                     }
                 }
             }
+            //根据Node创建context
             context = new Context(node, name);
             context.setOrigin(origin);
             contextHolder.set(context);

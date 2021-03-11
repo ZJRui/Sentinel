@@ -45,7 +45,7 @@ public class DefaultSlotChainBuilder implements SlotChainBuilder {
                 RecordLog.warn("The ProcessorSlot(" + slot.getClass().getCanonicalName() + ") is not an instance of AbstractLinkedProcessorSlot, can't be added into ProcessorSlotChain");
                 continue;
             }
-
+                //addLast的作用就是 将新元素放置到最后端，同时原来的末尾元素的next指向新的元素，从而构成一个链条
             chain.addLast((AbstractLinkedProcessorSlot<?>) slot);
         }
 

@@ -138,6 +138,12 @@ import java.util.Map;
  * @author jialiang.linjl
  * @author Eric Zhao
  */
+
+/**
+ * 问题： 为什么会有默认的slot哪里配置的？我们知道SPI可以基于接口或者抽象类
+ * ，对于Slot来说就是基于ProcessorSlot接口，在配置文件中配置类默认生效的7个Slot
+ * src/main/resources/META-INF/services/com.alibaba.csp.sentinel.slotchain.ProcessorSlot
+ */
 @Spi(order = Constants.ORDER_FLOW_SLOT)
 public class FlowSlot extends AbstractLinkedProcessorSlot<DefaultNode> {
 

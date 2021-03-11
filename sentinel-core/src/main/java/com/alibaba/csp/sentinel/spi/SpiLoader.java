@@ -384,7 +384,7 @@ public final class SpiLoader<S> {
                                 + existClass.getName() + ",SPI configuration file=" + fullFileName);
                     }
                     classMap.put(aliasName, clazz);
-
+                    //如果@SPI注解中指定了isDefault则 这个类作为defaultClass
                     if (spi != null && spi.isDefault()) {
                         if (defaultClass != null) {
                             fail("Found more than one default Provider, SPI configuration file=" + fullFileName);
