@@ -75,7 +75,7 @@ public class WebMvcTestController {
     private void doBusiness() {
         Random random = new Random(1);
         try {
-            TimeUnit.MILLISECONDS.sleep(random.nextInt(100));
+            TimeUnit.MILLISECONDS.sleep(random.nextInt(400));
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
