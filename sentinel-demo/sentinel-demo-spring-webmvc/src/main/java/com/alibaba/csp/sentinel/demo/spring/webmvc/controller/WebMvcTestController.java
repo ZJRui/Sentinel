@@ -28,19 +28,21 @@ import org.springframework.web.servlet.ModelAndView;
 
 /**
  * Test controller
+ *
  * @author kaizi2009
  */
 @Controller
 public class WebMvcTestController {
 
-    @SentinelResource(value = "hello",blockHandler = "apiHelloBlockHandler")
+    @SentinelResource(value = "hello", blockHandler = "apiHelloBlockHandler")
     @GetMapping("/hello")
     @ResponseBody
     public String apiHello() {
         doBusiness();
         return "Hello!";
     }
-    public String apiHelloBlockHandler( BlockException ex) {
+
+    public String apiHelloBlockHandler(BlockException ex) {
         return " apiHello apiHelloBlockHandler, ";
     }
 
@@ -64,12 +66,36 @@ public class WebMvcTestController {
         doBusiness();
         return "Exclude " + id;
     }
-    
+
     @GetMapping("/forward")
     public ModelAndView apiForward() {
         ModelAndView mav = new ModelAndView();
         mav.setViewName("hello");
         return mav;
+    }
+
+    @GetMapping("/resourceA")
+    @ResponseBody
+    public String resourceA() {
+
+        try {
+            Thread.sleep(10);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        return "resourceA scucess";
+    }
+
+    @GetMapping("/resourceB")
+    @ResponseBody
+    public String resourceB() {
+
+        try {
+            Thread.sleep(10);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        return "resourceB scucess";
     }
 
     private void doBusiness() {

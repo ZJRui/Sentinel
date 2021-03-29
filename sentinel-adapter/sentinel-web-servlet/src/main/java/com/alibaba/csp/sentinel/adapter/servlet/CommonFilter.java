@@ -113,6 +113,11 @@ public class CommonFilter implements Filter {
             // Return the block page, or redirect to another URL.
             WebCallbackManager.getUrlBlockHandler().blocked(sRequest, sResponse, e);
         } catch (IOException | ServletException | RuntimeException e2) {
+            //上面有两种情况 会抛出异常（1）执行了SphU.entry进入了某一个资源，在资源执行郭晨各种抛出了异常
+            //(2)没有entry某一个资源，而是直接执行了chain.doFilter()，在后续的业务方法中抛出了异常
+            //我们说异常统计是针对某一个资源做异常统计， 实际上对于第二种情况可以不统计。也就说  只有entry资源之后 退出资源之前，对这个过程中出现的异常做统计
+            //但是这里的traceEntry 当 上面没有entry 资源，而是直接执行了chain.doFilter 的时候抛出了异常，此时也会记录异常数量。
+            //但是实际上 如果上面执行 entry就没有urlEntry，在下面的这个tranceEntry方法中会判断 如果urlEntry为null则不会进行记录异常
             Tracer.traceEntry(e2, urlEntry);
             throw e2;
         } finally {

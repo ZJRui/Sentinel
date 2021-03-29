@@ -35,7 +35,7 @@ final class AuthorityRuleChecker {
             return true;
         }
 
-        // Do exact match with origin name.
+        // Do exact match with origin name. limitApp:为A.b.c 判断请求中origin是否在limitApp中
         int pos = rule.getLimitApp().indexOf(requester);
         boolean contain = pos > -1;
 

@@ -64,6 +64,7 @@ public class FlowThreadDemo {
                             Entry methodB = SphU.entry("methodB");
                             TimeUnit.MILLISECONDS.sleep(methodBRunningTime);
                             methodB.exit();
+                            //记录资源A通过的数量
                             pass.addAndGet(1);
                         } catch (BlockException e1) {
                             block.incrementAndGet();
