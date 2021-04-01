@@ -45,6 +45,8 @@ public class DefaultController implements TrafficShapingController {
         return canPass(node, acquireCount, false);
     }
 
+    //FlowSlot的entry--》FlowSlot#checkFlow-->FlowRuleChecker.checkFlow->
+    //FlowRuleChecker.canPassChecker->FlowRuleChecker#passLockCheck->DefaultController.cannPass
     @Override
     public boolean canPass(Node node, int acquireCount, boolean prioritized) {
         int curCount = avgUsedTokens(node);
@@ -72,6 +74,8 @@ public class DefaultController implements TrafficShapingController {
         if (node == null) {
             return DEFAULT_AVG_USED_TOKENS;
         }
+        //如果是是并发线程数，从node中获取当前线程Number
+        //如果是QPS，那么就返回node.passQPS
         return grade == RuleConstant.FLOW_GRADE_THREAD ? node.curThreadNum() : (int)(node.passQps());
     }
 

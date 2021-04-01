@@ -26,6 +26,9 @@ import com.alibaba.csp.sentinel.util.AssertUtil;
 
 /**
  * <p>
+ *     该类存储资源的概要运行时统计信息，包括rt、线程计数、qps等等。同一个资源全局共享同一个ClusterNode，无论在哪个ClusterNode中。
+ * 区分来自不同来源的调用(在ContextUtil中声明。输入(String name, String origin))，一个ClusterNode包含一个originCountMap，
+ * 这个map包含不同来源的StatisticNode。使用getOrCreateOriginNode(字符串)来获取特定起源的节点。注意，“origin”通常是服务消费者的应用名称。
  * This class stores summary runtime statistics of the resource, including rt, thread count, qps
  * and so on. Same resource shares the same {@link ClusterNode} globally, no matter in which
  * {@link com.alibaba.csp.sentinel.context.Context}.

@@ -22,6 +22,9 @@ import com.alibaba.csp.sentinel.slots.nodeselector.NodeSelectorSlot;
 
 /**
  * <p>
+ * 节点表示调用树的入口。
+ * 一个上下文与EntranceNode相关，EntranceNode表示调用树的入口。
+ * 如果当前上下文没有新的EntranceNode，则会创建新的EntranceNode。注意，相同的上下文名称在全局上将共享相同的EntranceNode
  * A {@link Node} represents the entrance of the invocation tree.
  * </p>
  * <p>

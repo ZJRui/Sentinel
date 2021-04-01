@@ -68,10 +68,42 @@ public class Context {
 
     /**
      * Current processing entry.
+     * 什么时候被赋值？
+     * 的entryWithPriority方法中，有如下代码
+     *  Entry e = new CtEntry(resourceWrapper, chain, context);// 1
+     *         try {
+     *             chain.entry(context, resourceWrapper, null, count, prioritized, args);
+     *   注意看标记1这个位置，这里创建了一个Entry，并将创建好的上下文对象作为参数传进去，看下其构造方法
+     *         this.context = context;//this是Entry对象
+     *         setUpEntryFor(context);
+     *
+     *          private void setUpEntryFor(Context context) {
+     *         if (context instanceof NullContext) {
+     *             return;
+     *         }
+     *         this.parent = context.getCurEntry();//1
+     *         if (parent != null) {//2
+     *             ((CtEntry)parent).child = this;//3
+     *         }
+     *         context.setCurEntry(this);//4
+     *     }
+     获取当前上下文的curEntry，如果不为空，则表示当前上下文中，在创建Entry之前就已经有一个Entry被创建过了，那么需要设置父子关系
+     4：这个地方就是我们要找的curEntry初始化的地方
+     也就是说创建Entry的时候穿了Context，在context中存在curEntry，这个时候我们要将此时新创建的Entry作为Context的curEntry
+
+     创建的对象是CEntry ，这个CEntry中存在parent属性，因此Context中原来的curEntry会被作为当前新创建的CEntry的parent。
+
+     因此结论就是：
+     entry1 = SphU.entry("resourceName1");的时候返回一个Entry,内部在创建Entry的时候传递了当前的Context，然后
+     新创建Entry的parent被设置为context的curEntry，然后新的Entry被作为Context的curEntry。
+     如果多次调用SphU.entry("resourceName1"); 那么Entry之间就会形成调用链。 entry的exit方法
+
+     *
      */
     private Entry curEntry;
 
     /**
+     *
      * The origin of this context (usually indicate different invokers, e.g. service consumer name or origin IP).
      */
     private String origin = "";
@@ -177,6 +209,7 @@ public class Context {
      * @return the parent node of the current.
      */
     public Node getLastNode() {
+        //这里的curEntry是什么？
         if (curEntry != null && curEntry.getLastNode() != null) {
             return curEntry.getLastNode();
         } else {

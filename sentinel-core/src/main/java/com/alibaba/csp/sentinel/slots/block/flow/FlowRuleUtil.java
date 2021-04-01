@@ -99,9 +99,19 @@ public final class FlowRuleUtil {
             if (StringUtil.isBlank(rule.getLimitApp())) {
                 rule.setLimitApp(RuleConstant.LIMIT_APP_DEFAULT);
             }
+            //FlowMananager的buildFlowRuleMap方法会调用到这里，从这里可以看出，Sentinel内部为每一个规则对象都创建一个
+            //Rater，可以简单理解为DefaultController。创建DefaultController的时候controller内部保存规则的阈值和限流类型（QPS或者线程数）
             TrafficShapingController rater = generateRater(rule);
             rule.setRater(rater);
 
+            /**
+             *  private static final Function<FlowRule, String> extractResource = new Function<FlowRule, String>() {
+             *         @Override
+             *         public String apply(FlowRule rule) {
+             *             return rule.getResource();
+             *         }
+             *     };
+             */
             K key = groupFunction.apply(rule);
             if (key == null) {
                 continue;
@@ -129,12 +139,24 @@ public final class FlowRuleUtil {
         return newRuleMap;
     }
 
+    /**
+     * FlowRuleChecker的passLocalCheck中调用getRater
+     * com.alibaba.csp.sentinel.slots.block.flow.FlowRuleChecker#passLocalCheck(com.alibaba.csp.sentinel.slots.block.flow.FlowRule, com.alibaba.csp.sentinel.context.Context, com.alibaba.csp.sentinel.node.DefaultNode, int, boolean)
+     * //getRater的返回值：com.alibaba.csp.sentinel.slots.block.flow.FlowRuleUtil.generateRater
+     * return rule.getRater().canPass(selectedNode, acquireCount, prioritized);
+     *
+     * @param rule
+     * @return
+     */
     private static TrafficShapingController generateRater(/*@Valid*/ FlowRule rule) {
         if (rule.getGrade() == RuleConstant.FLOW_GRADE_QPS) {
+            //获取流控效果
             switch (rule.getControlBehavior()) {
+                //warmUp 冷热启动
                 case RuleConstant.CONTROL_BEHAVIOR_WARM_UP:
                     return new WarmUpController(rule.getCount(), rule.getWarmUpPeriodSec(),
                             ColdFactorProperty.coldFactor);
+                //排队等地啊
                 case RuleConstant.CONTROL_BEHAVIOR_RATE_LIMITER:
                     return new RateLimiterController(rule.getMaxQueueingTimeMs(), rule.getCount());
                 case RuleConstant.CONTROL_BEHAVIOR_WARM_UP_RATE_LIMITER:
@@ -145,6 +167,7 @@ public final class FlowRuleUtil {
                     // Default mode or unknown mode: default traffic shaping controller (fast-reject).
             }
         }
+        //快速失败
         return new DefaultController(rule.getCount(), rule.getGrade());
     }
 

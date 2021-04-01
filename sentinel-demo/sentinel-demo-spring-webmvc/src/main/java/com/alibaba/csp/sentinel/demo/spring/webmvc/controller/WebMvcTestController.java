@@ -18,8 +18,14 @@ package com.alibaba.csp.sentinel.demo.spring.webmvc.controller;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
+import com.alibaba.csp.sentinel.Entry;
+import com.alibaba.csp.sentinel.EntryType;
+import com.alibaba.csp.sentinel.ResourceTypeConstants;
+import com.alibaba.csp.sentinel.SphU;
 import com.alibaba.csp.sentinel.annotation.SentinelResource;
+import com.alibaba.csp.sentinel.context.ContextUtil;
 import com.alibaba.csp.sentinel.slots.block.BlockException;
+import jdk.nashorn.internal.ir.Block;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -76,7 +82,18 @@ public class WebMvcTestController {
 
     @GetMapping("/resourceA")
     @ResponseBody
-    public String resourceA() {
+    public String resourceA() throws BlockException {
+        Entry entry = null;
+        try {
+            entry = SphU.entry("DegradeRuleTest", ResourceTypeConstants.COMMON_WEB, EntryType.IN);
+
+        } catch (BlockException e) {
+            throw e;
+        } finally {
+            if (entry != null) {
+                entry.exit();
+            }
+        }
 
         try {
             Thread.sleep(10);
@@ -98,12 +115,56 @@ public class WebMvcTestController {
         return "resourceB scucess";
     }
 
+
+    @GetMapping("/k/sentinel/degrade/strategy/exception")
+    @ResponseBody
+    public String degradeStrategyException() throws BlockException {
+
+
+        throw new RuntimeException("出现了异常");
+    }
+
+    @GetMapping("/k/integration/test0101")
+    @ResponseBody
+    public String testTryCatch() throws BlockException {
+        kIntegration();
+        return "正常执行";
+    }
+
     private void doBusiness() {
         Random random = new Random(1);
         try {
             TimeUnit.MILLISECONDS.sleep(random.nextInt(400));
         } catch (InterruptedException e) {
             e.printStackTrace();
+        }
+    }
+
+    public void kIntegration() throws BlockException {
+
+        Entry entry = null;
+        try {
+            entry = SphU.entry("DegradeRuleTest", ResourceTypeConstants.COMMON_WEB, EntryType.IN);
+
+        } catch (BlockException e) {
+            if (entry != null) {
+                entry.exit();
+            }
+            throw e;
+        }
+
+    }
+
+    public void kException() throws Exception {
+        Entry entry = null;
+        try {
+            entry = SphU.entry("DegradeRuleTest", ResourceTypeConstants.COMMON_WEB, EntryType.IN);
+
+        } catch (BlockException e) {
+            if (entry != null) {
+                entry.exit();
+            }
+            throw e;
         }
     }
 

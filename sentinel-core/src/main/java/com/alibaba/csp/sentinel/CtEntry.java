@@ -89,11 +89,19 @@ class CtEntry extends Entry {
             if (context instanceof NullContext) {
                 return;
             }
+            //entry1 = SphU.entry("resourceName1"); 会将Context中的curEntry设置为Sphu.entry返回的Entry
+            // entry1=SphU.entry("resourceName1");
+            //doSometing
+            //entry2.Sphu.entry
+            //entry2.exit
+            //entry1.exit
+            //当某一个entry调用exit时,正常情况下 Context中的curEntry应该是当前的entry
 
-            if (context.getCurEntry() != this) {
+            if (context.getCurEntry() != this) {//如果context中的entry不为当前entry
+                //获取资源名称
                 String curEntryNameInContext = context.getCurEntry() == null ? null
                     : context.getCurEntry().getResourceWrapper().getName();
-                // Clean previous call stack.
+                // Clean previous call stack. 为什么抛异常之前需要先对其他Entry进行exit
                 CtEntry e = (CtEntry) context.getCurEntry();
                 while (e != null) {
                     e.exit(count, args);
@@ -105,12 +113,21 @@ class CtEntry extends Entry {
                 throw new ErrorEntryFreeException(errorMessage);
             } else {
                 // Go through the onExit hook of all slots.
+                //Entry的exit会引起 ProcessorSlot的exit.
+                //我们可以这样理解 SphU.entry 会创建一个CEntry，然后创建一个context，将CEntry交给Context。
+                //然后创建一个Chain，然后使用chan调用其entry方法
+                // chain.entry(context, resourceWrapper, null, count, prioritized, args);
+                //也就是说 Sphu.entry 最终会引起chain.entry， 那么因为Sphu本身没有提供exit方法，exit方法是通过
+                //Sphu.entry返回的Entry 操作的，也就是执行entry.exit，那么此时在entry的exit方法中就需要执行 chain的exit
+                //Chain.entry表示将会引起 每一个ProcessorSlot的entry， Chain.exit表示会引起每一个ProcessorSlot的exit
+                //因Entry每一个资源的时候 都会执行ProcessorSlot的entry和exit
                 if (chain != null) {
                     chain.exit(context, resourceWrapper, count, args);
                 }
                 // Go through the existing terminate handlers (associated to this invocation).
                 callExitHandlersAndCleanUp(context);
 
+                //当前的entry执行了exit之后 需要将context中的curEntry设置为当前Entry的parent
                 // Restore the call stack.
                 context.setCurEntry(parent);
                 if (parent != null) {

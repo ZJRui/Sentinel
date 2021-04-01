@@ -82,6 +82,7 @@ public class FlowRuleChecker {
             return true;
         }
 
+        //getRater的返回值：com.alibaba.csp.sentinel.slots.block.flow.FlowRuleUtil.generateRater
         return rule.getRater().canPass(selectedNode, acquireCount, prioritized);
     }
 

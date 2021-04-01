@@ -121,7 +121,7 @@ public class ContextUtil {
     public static Context enter(String name, String origin) {
         if (Constants.CONTEXT_DEFAULT_NAME.equals(name)) {
             throw new ContextNameDefineException(
-                "The " + Constants.CONTEXT_DEFAULT_NAME + " can't be permit to defined!");
+                    "The " + Constants.CONTEXT_DEFAULT_NAME + " can't be permit to defined!");
         }
         return trueEnter(name, origin);
     }
@@ -139,7 +139,13 @@ public class ContextUtil {
                 } else {
                     LOCK.lock();
                     try {
-                        node = contextNameNodeMap.get(name);
+                        //一个ContextName会对应一个EntranceNode，EntranceNode从字面意思来看，叫做入口节点，也就是说，
+                        // 一个上下文开始的时候，会创建一个EntranceNode与其对应，代表该上下文的入口。
+                        //
+                        //另外看到EntranceNode会挂在ROOT节点下面，而ROOT又是一个EntranceNode节点，而其是全局唯一的，他代表应用的入口节点，如下
+                        //————————————————
+                        //这里的name是 ContextUtil.enter中传递过来的name，因此从下面的内容中我们可以看到一个contextName对应一个entryNode
+                        node = contextNameNodeMap.get(name);//contextName 和该contextName的EntranceNode之间的对应关系
                         if (node == null) {
                             if (contextNameNodeMap.size() > Constants.MAX_CONTEXT_NAME_SIZE) {
                                 setNullContext();
@@ -148,6 +154,7 @@ public class ContextUtil {
                                 //双重加锁创建一个入口节点
                                 node = new EntranceNode(new StringResourceWrapper(name, EntryType.IN), null);
                                 // Add entrance node. 放置到全局根节点
+                                //这个Root是一个DefaultNode，表示全局节点，他的子节点时系统中的ContextName的Node
                                 Constants.ROOT.addChild(node);
 
                                 Map<String, DefaultNode> newMap = new HashMap<>(contextNameNodeMap.size() + 1);
@@ -179,7 +186,7 @@ public class ContextUtil {
         // Don't need to be thread-safe.
         if (shouldWarn) {
             RecordLog.warn("[SentinelStatusChecker] WARN: Amount of context exceeds the threshold "
-                + Constants.MAX_CONTEXT_NAME_SIZE + ". Entries in new contexts will NOT take effect!");
+                    + Constants.MAX_CONTEXT_NAME_SIZE + ". Entries in new contexts will NOT take effect!");
             shouldWarn = false;
         }
     }

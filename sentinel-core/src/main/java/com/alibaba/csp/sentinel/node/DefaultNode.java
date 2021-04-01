@@ -26,6 +26,8 @@ import com.alibaba.csp.sentinel.slotchain.ResourceWrapper;
 import com.alibaba.csp.sentinel.slots.nodeselector.NodeSelectorSlot;
 
 /**
+ * 用于在特定上下文中保存特定资源名称的统计信息的节点。每个不同上下文中的每个不同资源都将对应于DefaultNode。
+ * 这个类可能有一组DefaultNodes子节点。当在同一上下文中多次调用SphU#entry()或SphO@entry()时，将创建子节点。
  * <p>
  * A {@link Node} used to hold statistics for specific resource name in the specific context.
  * Each distinct resource in each distinct {@link Context} will corresponding to a {@link DefaultNode}.

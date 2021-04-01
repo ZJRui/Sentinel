@@ -30,6 +30,10 @@ import java.util.Map;
 
 /**
  * </p>
+ * 这个类将尝试通过以下方法构建调用跟踪
+ * 如果需要，添加一个新的DefaultNode作为上下文中的最后一个子节点。上下文的最后一个节点是当前节点或上下文的父节点。
+ * 将自身设置为上下文当前节点。
+ * 它的工作原理如下
  * This class will try to build the calling traces via
  * <ol>
  * <li>adding a new {@link DefaultNode} if needed as the last child in the context.
@@ -128,7 +132,7 @@ import java.util.Map;
  * @see EntranceNode
  * @see ContextUtil
  */
-@Spi(isSingleton = false, order = Constants.ORDER_NODE_SELECTOR_SLOT)
+@Spi(isSingleton = false, order = Constants.ORDER_NODE_SELECTOR_SLOT)//order 是最小的值表示第一个被执行
 public class NodeSelectorSlot extends AbstractLinkedProcessorSlot<Object> {
 
     /**
@@ -179,12 +183,15 @@ public class NodeSelectorSlot extends AbstractLinkedProcessorSlot<Object> {
             synchronized (this) {
                 node = map.get(context.getName());
                 if (node == null) {
+                    //每一个context都有一个DefaultNode。问题ContextUtil的entry方法的时候会为该context创建一个EntranceNode，这里
+                    //又为每一个Context创建一个DefaultNode
                     node = new DefaultNode(resourceWrapper, null);
                     HashMap<String, DefaultNode> cacheMap = new HashMap<String, DefaultNode>(map.size());
                     cacheMap.putAll(map);
                     cacheMap.put(context.getName(), node);
                     map = cacheMap;
                     // Build invocation tree
+                    //getLastNode()
                     ((DefaultNode) context.getLastNode()).addChild(node);
                 }
 
